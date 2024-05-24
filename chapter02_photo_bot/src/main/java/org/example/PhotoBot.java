@@ -1,5 +1,8 @@
 package org.example;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import org.example.util.PropertiesLoader;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
@@ -16,7 +19,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
 
   private final TelegramClient telegramClient;
-  private final String SNICKERS_CAPTION = "snickers";
+  private final static String SNICKERS_CAPTION = "snickers";
 
   public PhotoBot(String botToken) {
     this.telegramClient = new OkHttpTelegramClient(botToken);
@@ -28,54 +31,59 @@ public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
     if (update.hasMessage() && update.getMessage().hasText()) {
       String msgText = update.getMessage().getText();
       long chatId = update.getMessage().getChatId();
-      if (msgText.equals("/start")) {
-        sendMessage(chatId, msgText);
-      } else if (msgText.equals("/pic")) {
-        sendPhoto(chatId, "PICTURE_URL", "CAPTURE");
-      } else if (msgText.equals("/markup")) {
-        SendMessage message = SendMessage
-            .builder()
-            .chatId(chatId)
-            .text(PropertiesLoader.getProperty("ASSORTMENT_TITLE"))
-            .build();
+      String firstName = update.getMessage().getChat().getFirstName();
+      String lastName = update.getMessage().getChat().getLastName();
+      long userId = update.getMessage().getChat().getId();
+      log(firstName, lastName, userId, msgText);
 
-        message.setReplyMarkup(ReplyKeyboardMarkup
-            .builder()
-            .keyboardRow(new KeyboardRow(PropertiesLoader.getProperty("BUTTON_1"),
-                PropertiesLoader.getProperty("BUTTON_2")))
-            .keyboardRow(new KeyboardRow(PropertiesLoader.getProperty("BUTTON_3"),
-                PropertiesLoader.getProperty("BUTTON_4")))
-            .build());
+      switch (msgText) {
+        case "/start" -> sendMessage(chatId, msgText);
+        case "/pic" -> sendPhoto(chatId, "PICTURE_URL", "CAPTURE");
+        case "/markup" -> {
+          SendMessage message = SendMessage
+              .builder()
+              .chatId(chatId)
+              .text(PropertiesLoader.getProperty("ASSORTMENT_TITLE"))
+              .build();
 
-        try {
-          telegramClient.execute(message);
-        } catch (TelegramApiException ex) {
-          throw new RuntimeException(ex.getMessage());
+          message.setReplyMarkup(ReplyKeyboardMarkup
+              .builder()
+              .keyboardRow(new KeyboardRow(PropertiesLoader.getProperty("BUTTON_1"),
+                  PropertiesLoader.getProperty("BUTTON_2")))
+              .keyboardRow(new KeyboardRow(PropertiesLoader.getProperty("BUTTON_3"),
+                  PropertiesLoader.getProperty("BUTTON_4")))
+              .build());
+
+          try {
+            telegramClient.execute(message);
+          } catch (TelegramApiException ex) {
+            throw new RuntimeException(ex.getMessage());
+          }
+          break;
         }
-      } else if (msgText.equals("nike")) {
-        sendPhoto(chatId, "PHOTO_NIKE", SNICKERS_CAPTION);
-      } else if (msgText.equals("adidas")) {
-        sendPhoto(chatId, "PHOTO_ADIDAS", SNICKERS_CAPTION);
-      } else if (msgText.equals("bmi")) {
-        sendPhoto(chatId, "PHOTO_BMI", SNICKERS_CAPTION);
-      } else if (msgText.equals("new balance")) {
-        sendPhoto(chatId, "PHOTO_NEW_BALANCE", SNICKERS_CAPTION);
-      } else if (msgText.equals("/hide")) {
-        SendMessage message = SendMessage
-            .builder()
-            .chatId(chatId)
-            .text("Keyboard hidden!")
-            .replyMarkup(new ReplyKeyboardRemove(true))
-            .build();
+        case "nike" -> sendPhoto(chatId, "PHOTO_NIKE", SNICKERS_CAPTION);
+        case "adidas" -> sendPhoto(chatId, "PHOTO_ADIDAS", SNICKERS_CAPTION);
+        case "bmi" -> sendPhoto(chatId, "PHOTO_BMI", SNICKERS_CAPTION);
+        case "new balance" -> sendPhoto(chatId, "PHOTO_NEW_BALANCE", SNICKERS_CAPTION);
+        case "/hide" -> {
+          SendMessage message = SendMessage
+              .builder()
+              .chatId(chatId)
+              .text("Keyboard hidden!")
+              .replyMarkup(new ReplyKeyboardRemove(true))
+              .build();
 
-        try {
-          telegramClient.execute(message);
-        } catch (TelegramApiException ex) {
-          throw new RuntimeException(ex.getMessage());
+          try {
+            telegramClient.execute(message);
+          } catch (TelegramApiException ex) {
+            throw new RuntimeException(ex.getMessage());
+          }
+          break;
         }
-      } else {
-        String textMessage = PropertiesLoader.getProperty("UNKNOWN_COMMAND");
-        sendMessage(chatId, textMessage);
+        default -> {
+          String textMessage = PropertiesLoader.getProperty("UNKNOWN_COMMAND");
+          sendMessage(chatId, textMessage);
+        }
       }
     }
   }
@@ -107,5 +115,14 @@ public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
     } catch (TelegramApiException ex) {
       throw new RuntimeException(ex.getMessage());
     }
+  }
+
+  private void log(String firstName, String lastName, long userId, String message) {
+    System.out.println("\n ----------------------------");
+    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    System.out.println(dateFormat.format(new Date()));
+    System.out.println(
+        "Message from: " + firstName + " " + lastName + " with userId: " + userId + "\n" +
+            "Text: " + message);
   }
 }
