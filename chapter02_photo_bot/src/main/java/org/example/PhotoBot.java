@@ -1,5 +1,6 @@
 package org.example;
 
+import com.vdurmont.emoji.EmojiParser;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -82,7 +83,8 @@ public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
         }
         default -> {
           String textMessage = PropertiesLoader.getProperty("UNKNOWN_COMMAND");
-          sendMessage(chatId, textMessage);
+          String emojiTextMessage = EmojiParser.parseToUnicode(textMessage + " \uD83D\uDC80");
+          sendMessage(chatId, emojiTextMessage);
         }
       }
     }
