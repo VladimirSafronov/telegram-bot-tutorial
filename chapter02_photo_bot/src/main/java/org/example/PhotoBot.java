@@ -30,8 +30,8 @@ public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
   public void consume(Update update) {
 
     if (update.hasMessage() && update.getMessage().hasText()) {
-      String msgText = update.getMessage().getText();
       long chatId = update.getMessage().getChatId();
+      String msgText = update.getMessage().getText();
       String firstName = update.getMessage().getChat().getFirstName();
       String lastName = update.getMessage().getChat().getLastName();
       long userId = update.getMessage().getChat().getId();
