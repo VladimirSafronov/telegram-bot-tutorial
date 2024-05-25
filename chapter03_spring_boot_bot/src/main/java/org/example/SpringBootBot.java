@@ -1,7 +1,8 @@
 package org.example;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.BotSession;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.AfterBotRegistration;
@@ -16,9 +17,13 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 public class SpringBootBot implements LongPollingSingleThreadUpdateConsumer, SpringLongPollingBot {
 
   private final TelegramClient telegramClient;
+  private final String token;
 
-  public SpringBootBot() {
-    this.telegramClient = new OkHttpTelegramClient(getBotToken());
+  public SpringBootBot(
+      @Qualifier("telegramClient") TelegramClient telegramClient,
+      @Value("botToken") String token) {
+    this.telegramClient = telegramClient;
+    this.token = token;
   }
 
   @Override
