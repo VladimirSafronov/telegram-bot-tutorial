@@ -5,11 +5,13 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.vdurmont.emoji.EmojiParser;
+import io.lettuce.core.api.sync.RedisCommands;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import org.bson.Document;
 import org.example.util.PropertiesLoader;
+import org.example.util.RedisIntegrator;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -45,8 +47,17 @@ public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
 
       switch (msgText) {
         case "/start" -> {
-          checkUserExists(firstName, lastName, userId, userName);
+//          checkUserExists(firstName, lastName, userId, userName);
           sendMessage(chatId, msgText);
+        }
+        case "/redis" -> {
+          RedisIntegrator redisIntegrator = new RedisIntegrator();
+          RedisCommands<String, String> syncCommands = redisIntegrator.getSyncCommands();
+          syncCommands.set(String.valueOf(userId), userName);
+          String msgRedis = syncCommands.get(String.valueOf(userId)) + " and Redis works!";
+          redisIntegrator.closeConnections();
+
+          sendMessage(chatId, msgRedis);
         }
         case "/pic" -> sendPhoto(chatId, "PICTURE_URL", "CAPTURE");
         case "/markup" -> {
