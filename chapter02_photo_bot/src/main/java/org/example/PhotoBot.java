@@ -1,9 +1,14 @@
 package org.example;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.vdurmont.emoji.EmojiParser;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import org.bson.Document;
 import org.example.util.PropertiesLoader;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
@@ -35,10 +40,14 @@ public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
       String firstName = update.getMessage().getChat().getFirstName();
       String lastName = update.getMessage().getChat().getLastName();
       long userId = update.getMessage().getChat().getId();
+      String userName = update.getMessage().getChat().getUserName();
       log(firstName, lastName, userId, msgText);
 
       switch (msgText) {
-        case "/start" -> sendMessage(chatId, msgText);
+        case "/start" -> {
+          checkUserExists(firstName, lastName, userId, userName);
+          sendMessage(chatId, msgText);
+        }
         case "/pic" -> sendPhoto(chatId, "PICTURE_URL", "CAPTURE");
         case "/markup" -> {
           SendMessage message = SendMessage
@@ -126,5 +135,26 @@ public class PhotoBot implements LongPollingSingleThreadUpdateConsumer {
     System.out.println(
         "Message from: " + firstName + " " + lastName + " with userId: " + userId + "\n" +
             "Text: " + message);
+  }
+
+  private void checkUserExists(String firstName, String lastName, long userId, String userName) {
+
+    String uri = "mongodb://localhost:27017";
+    try (MongoClient mongoClient = MongoClients.create(uri)) {
+      MongoDatabase database = mongoClient.getDatabase("mongoDB");
+      MongoCollection<Document> collection = database.getCollection("users");
+
+      long found = collection.countDocuments(Document.parse("{id : " + userId + "}"));
+      if (found == 0) {
+        Document doc = new Document("first_name", firstName)
+            .append("last_name", lastName)
+            .append("id", userId)
+            .append("username", userName);
+        collection.insertOne(doc);
+        System.out.println("User doesn't exist in database. Written.");
+      } else {
+        System.out.println("User exists in database");
+      }
+    }
   }
 }
